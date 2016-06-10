@@ -1,11 +1,30 @@
 'use strict';
 
 const amqp = require('amqp');
+const uuid = require('uuid');
+const TIMEOUT = 10000;
 
-let connection;
+const msgConfig = { mandatory: true, contentType: 'application/json' };
+const exchangeConfig = { durable: true, type: 'fanout' };
+const queueConfig = { autoDelete: false };
+const eventHandlers = {
+  error: [],
+  end: [],
+  connection: [],
+};
+
+let connection = null;
+let exchange = null;
 let api = null;
+let queue = null;
+let config = null;
 
 const messageHandlers = {};
+const responseFunctions = {};
+
+const _trigger = (eventType, data, msg) => {
+  eventHandlers[eventType].forEach((handler) => handler(data, msg));
+};
 
 const subscribe = (msg, handler) => {
   if (!messageHandlers[msg]) {
@@ -15,28 +34,37 @@ const subscribe = (msg, handler) => {
   return api;
 };
 
-const connect = (config) => {
-  const exchangeConfig = {
-    durable: true,
-    type: 'fanout',
-  };
-  const queueConfig = { autoDelete: false };
+const connect = (cfg) => {
+  if (connection !== null) {
+    return api;
+  }
+
+  config = cfg;
+
+  console.log(config);
 
   connection = amqp.createConnection(config);
   connection.on('error', (err) => {
-    console.error('Connection error', err);
+    _trigger('error', err);
   });
 
   connection.on('ready', () => {
     connection.exchange(config.exchange, exchangeConfig,
-      (exchange) => {
+      (_exchange) => {
+        exchange = _exchange;
         connection.queue(config.queue, queueConfig, (q) => {
-          console.info('Connected to mq. Listening...');
-
-          q.bind(exchange, config.queue);
-          q.subscribe((msg) => {
+          _trigger('connection');
+          queue = q;
+          queue.bind(exchange, config.queue);
+          queue.subscribe((msg) => {
             if (messageHandlers[msg.type]) {
               messageHandlers[msg.type].forEach((handler) => handler(msg));
+            }
+
+            if (msg.type === 'response-message') {
+              if (responseFunctions[msg.originId]) {
+                responseFunctions[msg.originId](msg);
+              }
             }
           });
         });
@@ -45,9 +73,58 @@ const connect = (config) => {
   return api;
 };
 
+const send = (message, opts, callback) => {
+  const msg = message;
+  let options = opts;
+  let cb = callback;
+  if (typeof opts === 'function') {
+    options = {};
+    cb = opts;
+  }
+
+  if (exchange === null) {
+    _trigger('error', 'Error sending message. Exchange is not ready yet.', msg);
+    return;
+  }
+  exchange.publish(config.queue, msg, msgConfig);
+
+  if (!!cb) {
+    const originId = uuid.v4();
+
+    if (options && options.isSecure) {
+      msg.isSecure = options.isSecure;
+    }
+
+    msg.responseExpected = true;
+    msg.originId = originId;
+
+    const timeoutId = setTimeout(() => {
+      cb({ type: 'timeout' }, null);
+      delete responseFunctions[originId];
+    }, TIMEOUT);
+
+    responseFunctions[originId] = (response) => {
+      clearTimeout(timeoutId);
+      cb(null, response);
+      delete responseFunctions[originId];
+    };
+  }
+};
+
+const eventHandler = (eventType, cb) => {
+  if (!eventHandlers[eventType]) {
+    const err = { message: 'Invalid event. Only \'error\', \'connection\' and \'end\' is supported' };
+    throw err;
+  }
+
+  eventHandlers[eventType].push(cb);
+};
+
 api = {
   connect,
   subscribe,
+  send,
+  on: eventHandler,
 };
 
 module.exports = api;

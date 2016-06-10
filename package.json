@@ -4,7 +4,7 @@
   "description": "Message queue API for NoCMS",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/"
   },
   "repository": {
     "type": "git",
@@ -13,6 +13,10 @@
   "author": "Jørgen Landsnes",
   "license": "ISC",
   "dependencies": {
-    "amqp": "^0.2.6"
+    "amqp": "^0.2.6",
+    "uuid": "^2.0.2"
+  },
+  "devDependencies": {
+    "tape": "^4.5.1"
   }
 }
