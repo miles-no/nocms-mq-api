@@ -86,7 +86,6 @@ const send = (message, opts, callback) => {
     _trigger('error', 'Error sending message. Exchange is not ready yet.', msg);
     return;
   }
-  exchange.publish(config.queue, msg, msgConfig);
 
   if (!!cb) {
     const originId = uuid.v4();
@@ -109,6 +108,7 @@ const send = (message, opts, callback) => {
       delete responseFunctions[originId];
     };
   }
+  exchange.publish(config.queue, msg, msgConfig);
 };
 
 const eventHandler = (eventType, cb) => {
@@ -120,10 +120,22 @@ const eventHandler = (eventType, cb) => {
   eventHandlers[eventType].push(cb);
 };
 
+const respond = (originalMsg, error, response) => {
+  const responseMsg = {
+    type: 'response-message',
+    originId: originalMsg.originId,
+    created: (new Date()).toISOString()
+  };
+  responseMsg.error = error;
+  responseMsg.response = response;
+  send(responseMsg);
+};
+
 api = {
   connect,
   subscribe,
   send,
+  respond,
   on: eventHandler,
 };
 
