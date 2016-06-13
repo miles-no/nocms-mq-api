@@ -96,13 +96,17 @@ const send = (message, opts, callback) => {
     msg.originId = originId;
 
     const timeoutId = setTimeout(() => {
-      cb({ type: 'timeout' }, null);
+      cb({ status: 504, message: 'Message timeout' }, null);
       delete responseFunctions[originId];
     }, TIMEOUT);
 
     responseFunctions[originId] = (response) => {
       clearTimeout(timeoutId);
-      cb(null, response);
+      if (response.error) {
+        cb(response.error, null);
+      } else {
+        cb(null. response.response);
+      }
       delete responseFunctions[originId];
     };
   }
