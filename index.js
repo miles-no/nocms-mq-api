@@ -41,8 +41,6 @@ const connect = (cfg) => {
 
   config = cfg;
 
-  console.log(config);
-
   connection = amqp.createConnection(config);
   connection.on('error', (err) => {
     _trigger('error', err);
