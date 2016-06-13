@@ -100,13 +100,19 @@ const send = (message, opts, callback) => {
       delete responseFunctions[originId];
     }, TIMEOUT);
 
-    responseFunctions[originId] = (response) => {
+    responseFunctions[originId] = (responseMsg) => {
       clearTimeout(timeoutId);
-      if (response.error) {
-        cb(response.error, null);
-      } else {
-        cb(null. response.response);
+      if(responseMsg && responseMsg.response ) {
+        cb(null, responseMsg.response);
+      }else{
+        if (responseMsg.error) {
+          cb(responseMsg.error, null);
+        } else {
+          _trigger('error', 'Invalid response', responseMsg);
+          cb({ status: 500, message: 'Invalid response' });
+        }
       }
+
       delete responseFunctions[originId];
     };
   }
