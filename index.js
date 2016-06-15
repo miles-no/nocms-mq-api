@@ -126,6 +126,7 @@ const eventHandler = (eventType, cb) => {
   }
 
   eventHandlers[eventType].push(cb);
+  return api;
 };
 
 const respond = (originalMsg, error, response) => {
