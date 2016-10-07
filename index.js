@@ -58,6 +58,9 @@ const connect = (cfg) => {
             if (messageHandlers[msg.type]) {
               messageHandlers[msg.type].forEach((handler) => handler(msg));
             }
+            if(messageHandlers['*']) {
+              messageHandlers['*'].forEach((handler) => handler(msg));
+            }
 
             if (msg.type === 'response-message') {
               if (responseFunctions[msg.originId]) {
