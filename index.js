@@ -2,6 +2,7 @@
 
 const amqp = require('amqp');
 const uuid = require('uuid');
+
 const TIMEOUT = 10000;
 
 const msgConfig = { mandatory: true, contentType: 'application/json' };
@@ -23,7 +24,7 @@ const messageHandlers = {};
 const responseFunctions = {};
 
 const _trigger = (eventType, data, msg) => {
-  eventHandlers[eventType].forEach((handler) => handler(data, msg));
+  eventHandlers[eventType].forEach(handler => handler(data, msg));
 };
 
 const subscribe = (msg, handler) => {
@@ -56,10 +57,10 @@ const connect = (cfg) => {
           queue.bind(exchange, config.queue);
           queue.subscribe((msg) => {
             if (messageHandlers[msg.type]) {
-              messageHandlers[msg.type].forEach((handler) => handler(msg));
+              messageHandlers[msg.type].forEach(handler => handler(msg));
             }
             if(messageHandlers['*']) {
-              messageHandlers['*'].forEach((handler) => handler(msg));
+              messageHandlers['*'].forEach(handler => handler(msg));
             }
 
             if (msg.type === 'response-message') {
@@ -105,9 +106,9 @@ const send = (message, opts, callback) => {
 
     responseFunctions[originId] = (responseMsg) => {
       clearTimeout(timeoutId);
-      if(responseMsg && responseMsg.response ) {
+      if (responseMsg && responseMsg.response) {
         cb(null, responseMsg.response);
-      }else{
+      } else {
         if (responseMsg.error) {
           cb(responseMsg.error, null);
         } else {
@@ -136,7 +137,7 @@ const respond = (originalMsg, error, response) => {
   const responseMsg = {
     type: 'response-message',
     originId: originalMsg.originId,
-    created: (new Date()).toISOString()
+    created: (new Date()).toISOString(),
   };
   responseMsg.error = error;
   responseMsg.response = response;

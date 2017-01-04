@@ -17,6 +17,9 @@
     "uuid": "^2.0.2"
   },
   "devDependencies": {
-    "tape": "^4.5.1"
+    "tape": "^4.5.1",
+    "eslint": "^3.12.2",
+    "eslint-config-webteam": "git+https://github.com/miles-no/eslint-config-webteam.git",
+    "eslint-plugin-import": "^2.2.0"
   }
 }
