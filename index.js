@@ -3,7 +3,7 @@
 const amqp = require('amqp');
 const uuid = require('uuid');
 
-const TIMEOUT = 10000;
+const TIMEOUT = 30000;
 
 const msgConfig = { mandatory: true, contentType: 'application/json' };
 const exchangeConfig = { durable: true, type: 'fanout' };
