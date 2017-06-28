@@ -12,6 +12,7 @@ const eventHandlers = {
   error: [],
   end: [],
   connection: [],
+  close: []
 };
 
 let connection = null;
@@ -45,6 +46,10 @@ const connect = (cfg) => {
   connection = amqp.createConnection(config);
   connection.on('error', (err) => {
     _trigger('error', err);
+  });
+
+  connection.on('close', () => {
+    _trigger('close', 'Connection closed');
   });
 
   connection.on('ready', () => {
