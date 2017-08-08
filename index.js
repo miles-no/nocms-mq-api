@@ -1,7 +1,7 @@
 'use strict';
 
 const amqp = require('amqp');
-const uuid = require('uuid');
+const uuid = require('uuid/v4');
 
 const TIMEOUT = 30000;
 
@@ -92,7 +92,7 @@ const send = (message, cb) => {
   }
 
   if (cb) {
-    const originId = uuid.v4();
+    const originId = uuid();
 
     msg.responseExpected = true;
     msg.originId = originId;
