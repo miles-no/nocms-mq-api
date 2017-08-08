@@ -12,7 +12,8 @@ const eventHandlers = {
   error: [],
   end: [],
   connection: [],
-  close: []
+  close: [],
+  message: [],
 };
 
 let connection = null;
@@ -24,7 +25,7 @@ let config = null;
 const messageHandlers = {};
 const responseFunctions = {};
 
-const _trigger = (eventType, data, msg) => {
+const trigger = (eventType, data, msg) => {
   eventHandlers[eventType].forEach(handler => handler(data, msg));
 };
 
@@ -45,11 +46,11 @@ const connect = (cfg) => {
 
   connection = amqp.createConnection(config);
   connection.on('error', (err) => {
-    _trigger('error', err);
+    trigger('error', err);
   });
 
   connection.on('close', () => {
-    _trigger('close', 'Connection closed');
+    trigger('close', 'Connection closed');
   });
 
   connection.on('ready', () => {
@@ -57,14 +58,15 @@ const connect = (cfg) => {
       (_exchange) => {
         exchange = _exchange;
         connection.queue(config.queue, queueConfig, (q) => {
-          _trigger('connection');
+          trigger('connection', `Connected to RabbitMQ exchange ${config.exchange}, subscribed to ${config.queue}`);
           queue = q;
           queue.bind(exchange, config.queue);
           queue.subscribe((msg) => {
+            trigger('message', msg);
             if (messageHandlers[msg.type]) {
               messageHandlers[msg.type].forEach(handler => handler(msg));
             }
-            if(messageHandlers['*']) {
+            if (messageHandlers['*']) {
               messageHandlers['*'].forEach(handler => handler(msg));
             }
 
@@ -90,11 +92,11 @@ const send = (message, opts, callback) => {
   }
 
   if (exchange === null) {
-    _trigger('error', 'Error sending message. Exchange is not ready yet.', msg);
+    trigger('error', 'Error sending message. Exchange is not ready yet.', msg);
     return;
   }
 
-  if (!!cb) {
+  if (cb) {
     const originId = uuid.v4();
 
     if (options && options.isSecure) {
@@ -117,7 +119,7 @@ const send = (message, opts, callback) => {
         if (responseMsg.error) {
           cb(responseMsg.error, null);
         } else {
-          _trigger('error', 'Invalid response', responseMsg);
+          trigger('error', 'Invalid response', responseMsg);
           cb({ status: 500, message: 'Invalid response' });
         }
       }
