@@ -8,6 +8,7 @@ const TIMEOUT = 30000;
 const msgConfig = { mandatory: true, contentType: 'application/json' };
 const exchangeConfig = { durable: true, type: 'fanout' };
 const queueConfig = { autoDelete: false };
+
 const eventHandlers = {
   error: [],
   end: [],
@@ -82,14 +83,8 @@ const connect = (cfg) => {
   return api;
 };
 
-const send = (message, opts, callback) => {
+const send = (message, cb) => {
   const msg = message;
-  let options = opts;
-  let cb = callback;
-  if (typeof opts === 'function') {
-    options = {};
-    cb = opts;
-  }
 
   if (exchange === null) {
     trigger('error', 'Error sending message. Exchange is not ready yet.', msg);
@@ -98,10 +93,6 @@ const send = (message, opts, callback) => {
 
   if (cb) {
     const originId = uuid.v4();
-
-    if (options && options.isSecure) {
-      msg.isSecure = options.isSecure;
-    }
 
     msg.responseExpected = true;
     msg.originId = originId;
