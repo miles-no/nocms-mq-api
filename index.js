@@ -27,7 +27,12 @@ const messageHandlers = {};
 const responseFunctions = {};
 
 const trigger = (eventType, data, msg) => {
-  eventHandlers[eventType].forEach(handler => handler(data, msg));
+  try {
+    eventHandlers[eventType].forEach(handler => handler(data, msg));
+  } catch (e) {
+    console.error(`Exception thrown in handler of event type ${eventType}`, e);
+    trigger('error', e);
+  }
 };
 
 const subscribe = (msg, handler) => {
