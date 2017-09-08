@@ -50,9 +50,15 @@ const subscribe = (msg, handler) => {
 };
 
 const log = (msg) => {
-  if(!extLogger) return;
+  let hasLogger = !!extLogger;
+  if(!hasLogger) return;
 
-  extLogger.log(`mq-client: ${msg}`);
+  if(typeof extLogger === "function") {
+    extLogger(`mq-client: ${msg}`);
+  }
+  else {
+    console.warn('Logger is not a function');
+  }
 }
 
 const connect = (cfg) => {
