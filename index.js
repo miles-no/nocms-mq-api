@@ -187,6 +187,7 @@ api = {
   subscribe,
   send,
   respond,
+  logger,
   on: eventHandler,
 };
 
