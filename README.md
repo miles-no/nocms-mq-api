@@ -15,7 +15,7 @@ Fluent API for handling rabbit mq messaging in NoCMS.
 ## Installation
 
 ```
-npm install nocms-events --save
+npm install nocms-mq-api --save
 ```
 
 ## Examples
