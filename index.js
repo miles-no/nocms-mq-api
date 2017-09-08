@@ -22,9 +22,14 @@ let exchange = null;
 let api = null;
 let queue = null;
 let config = null;
+let extLogger = null;
 
 const messageHandlers = {};
 const responseFunctions = {};
+
+const logger = (log) => {
+  extLogger = log;
+}
 
 const trigger = (eventType, data, msg) => {
   try {
@@ -43,6 +48,12 @@ const subscribe = (msg, handler) => {
   return api;
 };
 
+const log = (msg) => {
+  if(!extLogger) return;
+
+  extLogger.log(`mq-client: ${msg}`);
+}
+
 const connect = (cfg) => {
   if (connection !== null) {
     return api;
@@ -53,13 +64,36 @@ const connect = (cfg) => {
   connection = amqp.createConnection(config);
   connection.on('error', (err) => {
     trigger('error', err);
+    log(err);
   });
 
   connection.on('close', () => {
     trigger('close', 'Connection closed');
+    log('Connection closed');
+  });
+
+  connection.on('end', () => {
+    log('Connection ended');
+  });
+
+  connection.on('timeout', () => {
+    log('Connection timeout');
+  });
+
+  connection.on('drain', () => {
+    log('Connection drain');
+  });
+
+  connection.on('connect', () => {
+    log('Connection connect');
+  });
+
+  connection.on('secureConnect', () => {
+    log('Connection secureConnect');
   });
 
   connection.on('ready', () => {
+    log('Ready');
     connection.exchange(config.exchange, exchangeConfig,
       (_exchange) => {
         exchange = _exchange;
