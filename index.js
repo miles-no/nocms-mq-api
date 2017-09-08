@@ -29,6 +29,7 @@ const responseFunctions = {};
 
 const logger = (log) => {
   extLogger = log;
+  return api;
 }
 
 const trigger = (eventType, data, msg) => {
