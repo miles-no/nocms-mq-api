@@ -138,7 +138,7 @@ const send = (message, cb) => {
   }
 
   if (cb) {
-    const originId = uuid();
+    const originId = msg.originId || uuid();
 
     msg.responseExpected = true;
     msg.originId = originId;
