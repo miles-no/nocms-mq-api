@@ -152,6 +152,8 @@ const send = (message, cb) => {
       clearTimeout(timeoutId);
       if (responseMsg && responseMsg.response) {
         cb(null, responseMsg.response);
+      } else if (responseMsg && responseMsg.data) {
+        cb(null, responseMsg.data);
       } else {
         if (responseMsg.error) {
           cb(responseMsg.error, null);
