@@ -111,10 +111,18 @@ const connect = (cfg) => {
           queue.subscribe((msg) => {
             trigger('message', msg);
             if (messageHandlers[msg.type]) {
-              messageHandlers[msg.type].forEach(handler => handler(msg));
+              try{
+                messageHandlers[msg.type].forEach(handler => handler(msg));
+              } catch(ex) {
+                trigger('error', ex);
+              }
             }
             if (messageHandlers['*']) {
-              messageHandlers['*'].forEach(handler => handler(msg));
+              try {
+                messageHandlers['*'].forEach(handler => handler(msg));
+              } catch(ex) {
+                trigger('error', ex);
+              }
             }
 
             if (msg.type === 'response-message') {
