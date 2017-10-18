@@ -1,4 +1,4 @@
-'use strict';
+
 
 const amqp = require('amqp');
 const uuid = require('uuid/v4');
@@ -30,11 +30,11 @@ const responseFunctions = {};
 const logger = (log) => {
   extLogger = log;
   return api;
-}
+};
 
 const trigger = (eventType, data, msg) => {
   try {
-    eventHandlers[eventType].forEach(handler => handler(data, msg));
+    eventHandlers[eventType].forEach((handler) => { return handler(data, msg); });
   } catch (e) {
     console.error(`Exception thrown in handler of event type ${eventType}`, e);
     trigger('error', e);
@@ -50,16 +50,15 @@ const subscribe = (msg, handler) => {
 };
 
 const log = (msg) => {
-  let hasLogger = !!extLogger;
-  if(!hasLogger) return;
+  const hasLogger = !!extLogger;
+  if (!hasLogger) return;
 
-  if(typeof extLogger === "function") {
+  if (typeof extLogger === 'function') {
     extLogger(`mq-client: ${msg}`);
-  }
-  else {
+  } else {
     console.warn('Logger is not a function');
   }
-}
+};
 
 const connect = (cfg) => {
   if (connection !== null) {
@@ -111,16 +110,16 @@ const connect = (cfg) => {
           queue.subscribe((msg) => {
             trigger('message', msg);
             if (messageHandlers[msg.type]) {
-              try{
-                messageHandlers[msg.type].forEach(handler => handler(msg));
-              } catch(ex) {
+              try {
+                messageHandlers[msg.type].forEach((handler) => { return handler(msg); });
+              } catch (ex) {
                 trigger('error', ex);
               }
             }
             if (messageHandlers['*']) {
               try {
-                messageHandlers['*'].forEach(handler => handler(msg));
-              } catch(ex) {
+                messageHandlers['*'].forEach((handler) => { return handler(msg); });
+              } catch (ex) {
                 trigger('error', ex);
               }
             }
@@ -162,13 +161,11 @@ const send = (message, cb) => {
         cb(null, responseMsg.response);
       } else if (responseMsg && responseMsg.data) {
         cb(null, responseMsg.data);
+      } else if (responseMsg.error) {
+        cb(responseMsg.error, null);
       } else {
-        if (responseMsg.error) {
-          cb(responseMsg.error, null);
-        } else {
-          trigger('error', 'Invalid response', responseMsg);
-          cb({ status: 500, message: 'Invalid response' });
-        }
+        trigger('error', 'Invalid response', responseMsg);
+        cb({ status: 500, message: 'Invalid response' });
       }
 
       delete responseFunctions[originId];
