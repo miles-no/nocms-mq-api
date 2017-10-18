@@ -23,7 +23,7 @@
     "eslint": "^4.9.0",
     "eslint-config-webteam": "^2.0.0",
     "eslint-plugin-import": "^2.2.0",
-    "semantic-release": "^6.3.6",
+    "semantic-release": "^8.2.0",
     "tape": "^4.5.1"
   },
   "release": {
