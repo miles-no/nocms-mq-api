@@ -23,12 +23,19 @@ let api = null;
 let queue = null;
 let config = null;
 let extLogger = null;
+let checkHeartbeatTimeout = null;
+let heartbeatTimeoutValue = 10; // seconds
 
 const messageHandlers = {};
 const responseFunctions = {};
 
 const logger = (log) => {
   extLogger = log;
+  return api;
+};
+
+const heartbeatTimeout = (value) => {
+  heartbeatTimeoutValue = value;
   return api;
 };
 
@@ -60,6 +67,23 @@ const log = (msg) => {
   }
 };
 
+const clearCheckHeartbeatTimeout = () => {
+  if (checkHeartbeatTimeout) {
+    clearTimeout(checkHeartbeatTimeout);
+    checkHeartbeatTimeout = null;
+  }
+}
+
+const startCheckHeartbeatTimeout = (connection, heartbeatIntervall) => {
+  log(`Setting timeout to check if next heartbeat happens within ${heartbeatIntervall + heartbeatTimeoutValue} seconds`);
+
+  clearCheckHeartbeatTimeout();
+  checkHeartbeatTimeout = setTimeout(() => {
+    trigger('error', 'heartbeat missed');
+    connection.reconnect();
+  }, (heartbeatIntervall + heartbeatTimeoutValue) * 1000);
+};
+
 const connect = (cfg) => {
   if (connection !== null) {
     return api;
@@ -74,6 +98,7 @@ const connect = (cfg) => {
   });
 
   connection.on('close', () => {
+    clearCheckHeartbeatTimeout();
     trigger('close', 'Connection closed');
     log('Connection closed');
   });
@@ -98,8 +123,18 @@ const connect = (cfg) => {
     log('Connection secureConnect');
   });
 
+  connection.on('heartbeat', () => {
+    log('Connection heartbeat');
+    startCheckHeartbeatTimeout(connection, cfg.heartbeat);
+  });
+
   connection.on('ready', () => {
     log('Ready');
+    if (config.heartbeat) {
+      log('Using heartbeat');
+      startCheckHeartbeatTimeout(connection, cfg.heartbeat);
+    }
+
     connection.exchange(config.exchange, exchangeConfig,
       (_exchange) => {
         exchange = _exchange;
@@ -202,6 +237,7 @@ api = {
   respond,
   logger,
   on: eventHandler,
+  heartbeatTimeout,
 };
 
 module.exports = api;
