@@ -25,6 +25,7 @@ let config = null;
 let extLogger = null;
 let checkHeartbeatTimeout = null;
 let heartbeatTimeoutValue = 10; // seconds
+let lastHeartbeatTimestamp = null;
 
 const messageHandlers = {};
 const responseFunctions = {};
@@ -68,20 +69,20 @@ const log = (msg) => {
 };
 
 const clearCheckHeartbeatTimeout = () => {
-  if (checkHeartbeatTimeout) {
+  if (checkHeartbeatTimeout !== null) {
     clearTimeout(checkHeartbeatTimeout);
     checkHeartbeatTimeout = null;
   }
 }
 
-const startCheckHeartbeatTimeout = (connection, heartbeatIntervall) => {
-  log(`Setting timeout to check if next heartbeat happens within ${heartbeatIntervall + heartbeatTimeoutValue} seconds`);
+const startCheckHeartbeatTimeout = () => {
+  log(`Setting timeout to check if next heartbeat happens within ${config.heartbeat + heartbeatTimeoutValue} seconds`);
 
   clearCheckHeartbeatTimeout();
   checkHeartbeatTimeout = setTimeout(() => {
     trigger('error', 'heartbeat missed');
     connection.reconnect();
-  }, (heartbeatIntervall + heartbeatTimeoutValue) * 1000);
+  }, (config.heartbeat + heartbeatTimeoutValue) * 1000);
 };
 
 const connect = (cfg) => {
@@ -93,6 +94,7 @@ const connect = (cfg) => {
 
   connection = amqp.createConnection(config);
   connection.on('error', (err) => {
+    clearCheckHeartbeatTimeout();
     trigger('error', err);
     log(err);
   });
@@ -124,15 +126,18 @@ const connect = (cfg) => {
   });
 
   connection.on('heartbeat', () => {
-    log('Connection heartbeat');
-    startCheckHeartbeatTimeout(connection, cfg.heartbeat);
+    const now = Date.now();
+    log(`Connection heartbeat. Time since last ${now - lastHeartbeatTimestamp} ms`);
+    lastHeartbeatTimestamp = now;
+    startCheckHeartbeatTimeout();
   });
 
   connection.on('ready', () => {
     log('Ready');
     if (config.heartbeat) {
       log('Using heartbeat');
-      startCheckHeartbeatTimeout(connection, cfg.heartbeat);
+      lastHeartbeatTimestamp = Date.now();
+      startCheckHeartbeatTimeout();
     }
 
     connection.exchange(config.exchange, exchangeConfig,
@@ -207,6 +212,10 @@ const send = (message, cb) => {
     };
   }
   exchange.publish(config.queue, msg, msgConfig);
+  if (config.heartbeat) {
+    lastHeartbeatTimestamp = Date.now();
+    startCheckHeartbeatTimeout();
+  }
 };
 
 const eventHandler = (eventType, cb) => {
