@@ -25,9 +25,5 @@
     "nsp": "^3.2.1",
     "semantic-release": "^15.5.1",
     "tape": "^4.5.1"
-  },
-  "release": {
-    "verifyConditions": "condition-circle",
-    "debug": false
   }
 }
