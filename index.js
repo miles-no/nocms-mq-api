@@ -73,7 +73,7 @@ const clearCheckHeartbeatTimeout = () => {
     clearTimeout(checkHeartbeatTimeout);
     checkHeartbeatTimeout = null;
   }
-}
+};
 
 const startCheckHeartbeatTimeout = () => {
   log(`Setting timeout to check if next heartbeat happens within ${config.heartbeat + heartbeatTimeoutValue} seconds`);
