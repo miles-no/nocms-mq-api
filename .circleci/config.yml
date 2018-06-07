@@ -1,0 +1,35 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: circleci/node:10.3.0
+    steps:
+      - checkout
+      - run:
+          name: Install npm packages
+          command: npm ci
+      - run:
+          name: Linting
+          command: npm run eslint
+      - run:
+          name: Check packages for known vulnerabilities
+          command: npm run nsp
+      - run:
+          name: Test code
+          command: echo "No tests. It's such a shame"
+  release:
+    docker:
+      - image: circleci/node:10.3.0
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx semantic-release
+
+workflows:
+  version: 2
+  test_and_release:
+    jobs:
+      - test
+      - release:
+          requires:
+            - test
